@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,6 +31,10 @@ namespace Neuro
 
         private List<ImageData> images;
 
+        private const int LEARN_ERAS = 5;
+
+        private const string WEIGTHTS_PATH = "./weigths.json";
+
         public MainWindow()
         {
             PIXEL_FORMAT = PixelFormats.Gray8;
@@ -39,7 +44,7 @@ namespace Neuro
             images = DatasetReader.GetImages();
             _nn = new();
 
-            // verdict
+            UpdateUI();
         }
 
         private void PrintVerdict(double[] output)
@@ -53,7 +58,31 @@ namespace Neuro
             debug.Content = '[' + string.Join(", ", output.Select(o => o.ToString("F2"))) + ']';
         }
 
-        private void CheckNext(object sender, RoutedEventArgs e)
+        private void CheckThis(object sender, RoutedEventArgs e)
+        {
+            var img = images[indexCurrent];
+            var output = _nn.Run(img.ImagePixels);
+            PrintVerdict(output);
+        }
+
+        private void Button_Learn(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Button_NextIndex(object sender, RoutedEventArgs e)
+        {
+            indexCurrent++;
+            UpdateUI();
+        }
+
+        private void Button_ResetIndex(object sender, RoutedEventArgs e)
+        {
+            indexCurrent = 0;
+            UpdateUI();
+        }
+
+        private void UpdateUI()
         {
             var img = images[indexCurrent];
             if (img != null)
@@ -69,11 +98,20 @@ namespace Neuro
                 ImgOutput.Source = bm;
                 LabelOutput.Content = img.Label.ToString();
             }
-
-            var output = _nn.Run(img.ImagePixels);
-            PrintVerdict(output);
             Index.Content = indexCurrent;
-            indexCurrent++;
+        }
+
+        private void Button_Save(object sender, RoutedEventArgs e)
+        {
+            File.WriteAllText(WEIGTHTS_PATH, _nn.SerializeWeigths());
+        }
+
+        private void Button_Load(object sender, RoutedEventArgs e)
+        {
+            if (!File.Exists(WEIGTHTS_PATH)) return;
+            var w_str = File.ReadAllText(WEIGTHTS_PATH);
+            var w = Newtonsoft.Json.JsonConvert.DeserializeObject<double[][]>(w_str);
+            _nn = new(w);
         }
     }
 }
