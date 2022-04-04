@@ -32,7 +32,7 @@ namespace Neuro
 
             var images = DatasetReader.GetImages();
 
-            var img = images.Skip(1).FirstOrDefault();
+            var img = images.FirstOrDefault();
             if (img != null)
             {
                 var bm = BitmapSource.Create(

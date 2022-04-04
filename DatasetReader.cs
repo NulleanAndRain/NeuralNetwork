@@ -21,8 +21,16 @@ namespace Neuro
 
         public static List<ImageData> GetImages()
         {
-            var img_bytes = File.ReadAllBytes(IMAGES_PATH).Skip(4).ToArray();
-            var labels_bytes = File.ReadAllBytes(LABELS_PATH).Skip(2).ToList();
+            // images dataset file has header of 4 Int32 numbers:
+            // magic number 2051,
+            // number of images (10_000),
+            // number of rows (28),
+            // number of columns (28)
+            var img_bytes = File.ReadAllBytes(IMAGES_PATH).Skip(16).ToArray();
+            // labels dataset file has header of 2 Int32 numbers:
+            // magic number 2051,
+            // number of images labels (10_000),
+            var labels_bytes = File.ReadAllBytes(LABELS_PATH).Skip(8).ToList();
 
             var res = new List<ImageData>(ITEMS_COUNT);
             var i = 0;
