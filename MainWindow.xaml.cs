@@ -24,15 +24,38 @@ namespace Neuro
         private readonly PixelFormat PIXEL_FORMAT;
         private readonly int BM_STRIDE;
 
+        private NeuroNet _nn;
+
+        private int indexCurrent = 0;
+
+        private List<ImageData> images;
+
         public MainWindow()
         {
             PIXEL_FORMAT = PixelFormats.Gray8;
             BM_STRIDE = (DatasetReader.IMAGES_SIZE_X * PIXEL_FORMAT.BitsPerPixel + 7) / 8;
             InitializeComponent();
 
-            var images = DatasetReader.GetImages();
+            images = DatasetReader.GetImages();
+            _nn = new();
 
-            var img = images.FirstOrDefault();
+            // verdict
+        }
+
+        private void PrintVerdict(double[] output)
+        {
+            var _l = output.ToList();
+            var maxVal = _l.Max();
+            var indexMax = _l.IndexOf(maxVal);
+            var msg = $"Possibly it is digit {indexMax} (possibility: {(maxVal * 100).ToString("F2")}%)";
+            verdict.Content = msg;
+
+            debug.Content = '[' + string.Join(", ", output.Select(o => o.ToString("F2"))) + ']';
+        }
+
+        private void CheckNext(object sender, RoutedEventArgs e)
+        {
+            var img = images[indexCurrent];
             if (img != null)
             {
                 var bm = BitmapSource.Create(
@@ -46,6 +69,11 @@ namespace Neuro
                 ImgOutput.Source = bm;
                 LabelOutput.Content = img.Label.ToString();
             }
+
+            var output = _nn.Run(img.ImagePixels);
+            PrintVerdict(output);
+            Index.Content = indexCurrent;
+            indexCurrent++;
         }
     }
 }

@@ -9,6 +9,10 @@
     <Grid>
         <Image Height="100" Width="100" Margin="183,167,517,167" Name="ImgOutput"/>
         <Label Content="Label" HorizontalAlignment="Left" Margin="298,0,0,0" VerticalAlignment="Center" Name="LabelOutput"/>
+        <Label Content="Label" Margin="37,262,464,112" Name="verdict"/>
+        <Button Content="Check next" HorizontalAlignment="Left" Margin="156,115,0,0" VerticalAlignment="Top" Width="77" Click="CheckNext"/>
+        <Label Content="Label" HorizontalAlignment="Left" Margin="431,7,0,0" VerticalAlignment="Top" Width="359" Height="235" Name="debug"/>
+        <Label Content="Label" HorizontalAlignment="Left" Margin="278,55,0,0" VerticalAlignment="Top" Name="Index"/>
 
     </Grid>
 </Window>

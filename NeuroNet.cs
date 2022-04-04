@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Neuro
 {
@@ -33,9 +34,9 @@ namespace Neuro
         private double[][] values;
         private double[][] weights;
 
-        public NeuroNet()
+        public NeuroNet(bool generateRandWeights = true)
         {
-            var rnd = new Random();
+            var rnd = new Random(DateTime.Now.Millisecond);
             values = new double[NN_LAYERS][];
             weights = new double[NN_LAYERS][];
 
@@ -50,10 +51,23 @@ namespace Neuro
             {
                 values[i] = new double[INTERNAL_LAYER_NEURONS];
                 weights[i] = new double[INTERNAL_LAYER_NEURONS];
-                weights[i] = weights[i].Select(_ => rnd.NextDouble()).ToArray();
+                if (generateRandWeights)
+                    weights[i] = weights[i].Select(_ => rnd.NextDouble()).ToArray();
             }
             ActivatonFunc = Softsign;
         }
+
+        public NeuroNet(double[][] weights) : this(false)
+        {
+            if (weights is null)
+            {
+                throw new ArgumentNullException(nameof(weights));
+            }
+
+            this.weights = weights;
+        }
+
+        public string SerializeWeigths() => JsonConvert.SerializeObject(weights);
 
         public double[] Run(byte[] image)
         {
@@ -89,5 +103,7 @@ namespace Neuro
 
             return values[^1].ToArray();
         }
+
+        public double _get_w_0_0() => weights[0][0];
     }
 }
