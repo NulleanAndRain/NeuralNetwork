@@ -7,6 +7,8 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <Image Height="100" Width="100" Margin="183,167,517,167" Name="ImgOutput"/>
+        <Label Content="Label" HorizontalAlignment="Left" Margin="298,0,0,0" VerticalAlignment="Center" Name="LabelOutput"/>
 
     </Grid>
 </Window>
