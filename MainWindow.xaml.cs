@@ -73,6 +73,14 @@ namespace Neuro
         private void Button_NextIndex(object sender, RoutedEventArgs e)
         {
             indexCurrent++;
+            indexCurrent %= DatasetReader.ITEMS_COUNT;
+            UpdateUI();
+        }
+
+        private void Button_PrevIndex(object sender, RoutedEventArgs e)
+        {
+            indexCurrent--;
+            if (indexCurrent < 0) indexCurrent = DatasetReader.ITEMS_COUNT - 1;
             UpdateUI();
         }
 

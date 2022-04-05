@@ -19,6 +19,7 @@
         <Button Content="Reset index" HorizontalAlignment="Left" Margin="186,58,0,0" VerticalAlignment="Top" Click="Button_ResetIndex"/>
         <Button Content="Save" HorizontalAlignment="Left" Margin="510,297,0,0" VerticalAlignment="Top" Width="42" Click="Button_Save"/>
         <Button Content="Load" HorizontalAlignment="Left" Margin="510,322,0,0" VerticalAlignment="Top" Width="42" Click="Button_Load"/>
+        <Button Content="Prev Index" HorizontalAlignment="Left" Margin="72,115,0,0" VerticalAlignment="Top" Width="79" Click="Button_PrevIndex"/>
 
     </Grid>
 </Window>
