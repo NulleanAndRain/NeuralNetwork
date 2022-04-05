@@ -110,7 +110,7 @@ namespace Neuro
         {
             if (!File.Exists(WEIGTHTS_PATH)) return;
             var w_str = File.ReadAllText(WEIGTHTS_PATH);
-            var w = Newtonsoft.Json.JsonConvert.DeserializeObject<double[][]>(w_str);
+            var w = Newtonsoft.Json.JsonConvert.DeserializeObject<double[][][]>(w_str);
             _nn = new(w);
         }
     }

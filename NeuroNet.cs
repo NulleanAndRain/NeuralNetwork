@@ -32,32 +32,39 @@ namespace Neuro
         #endregion
 
         private double[][] values;
-        private double[][] weights;
+        private double[][][] weights;
 
         public NeuroNet(bool generateRandWeights = true)
         {
             var rnd = new Random(DateTime.Now.Millisecond);
             values = new double[NN_LAYERS][];
-            weights = new double[NN_LAYERS][];
+            weights = new double[NN_LAYERS][][];
 
-            values[0] = new double[DatasetReader.IMAGE_PIXELS];
-            values[^1] = new double[OUTPUT_NEURONS];
-
-            weights[0] = new double[DatasetReader.IMAGE_PIXELS];
-            weights[0] = weights[0].Select(_ => rnd.NextDouble()).ToArray();
-            weights[^1] = new double[OUTPUT_NEURONS];
-            weights[^1] = weights[^1].Select(_ => rnd.NextDouble()).ToArray();
-            for (int i = 1; i < NN_LAYERS - 1; i++)
+            for (int layer = 0; layer < NN_LAYERS; layer++)
             {
-                values[i] = new double[INTERNAL_LAYER_NEURONS];
-                weights[i] = new double[INTERNAL_LAYER_NEURONS];
-                if (generateRandWeights)
-                    weights[i] = weights[i].Select(_ => rnd.NextDouble()).ToArray();
+                if (layer == NN_LAYERS - 1)
+                {
+                    values[layer] = new double[OUTPUT_NEURONS];
+                    weights[layer] = new double[OUTPUT_NEURONS][];
+                }
+                else
+                {
+                    values[layer] = new double[INTERNAL_LAYER_NEURONS];
+                    weights[layer] = new double[INTERNAL_LAYER_NEURONS][];
+                }
+                for (var neuron_index = 0; neuron_index < weights[layer].Length; neuron_index++)
+                {
+                    if (layer == 0) weights[layer][neuron_index] = new double[DatasetReader.IMAGE_PIXELS];
+                    else weights[layer][neuron_index] = new double[weights[layer - 1].Length];
+
+                    if (generateRandWeights)
+                        weights[layer][neuron_index] = weights[layer][neuron_index].Select(_ => rnd.NextDouble()).ToArray();
+                }
             }
             ActivatonFunc = Softsign;
         }
 
-        public NeuroNet(double[][] weights) : this(false)
+        public NeuroNet(double[][][] weights) : this(false)
         {
             if (weights is null)
             {
@@ -78,32 +85,22 @@ namespace Neuro
 
             for (int n = 0; n < values[0].Length; n++)
             {
-                var w = weights[0][n];
-                var sum = 0d;
-                foreach (var i in input)
-                {
-                    sum += i * w;
-                }
+                var n_weigths = weights[0][n];
+                var sum = input.Zip(n_weigths, (i, w) => i * w).Sum();
                 values[0][n] = ActivatonFunc(sum);
             }
 
             for (int layer = 1; layer < NN_LAYERS; layer++)
             {
-                for (int n = 1; n < NN_LAYERS; n++)
+                for (int n = 0; n < values[layer].Length; n++)
                 {
-                    var w = weights[layer][n];
-                    var sum = 0d;
-                    foreach (var v in values[layer - 1])
-                    {
-                        sum += v * w;
-                    }
+                    var n_weigths = weights[layer][n];
+                    var sum = values[layer - 1].Zip(n_weigths, (i, w) => i * w).Sum(); ;
                     values[layer][n] = ActivatonFunc(sum);
                 }
             }
 
             return values[^1].ToArray();
         }
-
-        public double _get_w_0_0() => weights[0][0];
     }
 }
