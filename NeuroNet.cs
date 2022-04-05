@@ -55,7 +55,7 @@ namespace Neuro
                 if (layer == NN_LAYERS - 1)
                 {
                     values[layer] = new double[OUTPUT_NEURONS];
-                    weights[layer] = new double[values[layer - 1].Length][];
+                    weights[layer] = new double[OUTPUT_NEURONS][];
                 }
                 else if (layer == 0)
                 {
@@ -65,12 +65,12 @@ namespace Neuro
                 else
                 {
                     values[layer] = new double[INTERNAL_LAYER_NEURONS];
-                    weights[layer] = new double[values[layer - 1].Length][];
+                    weights[layer] = new double[INTERNAL_LAYER_NEURONS][];
                 }
                 for (var neuron_index = 0; neuron_index < weights[layer].Length; neuron_index++)
                 {
                     if (layer == 0) weights[layer][neuron_index] = new double[1];
-                    else weights[layer][neuron_index] = new double[weights[layer - 1].Length];
+                    else weights[layer][neuron_index] = new double[values[layer - 1].Length];
 
                     if (generateRandWeights)
                         weights[layer][neuron_index] = weights[layer][neuron_index].Select(_ => rnd.NextDouble()).ToArray();
@@ -99,26 +99,34 @@ namespace Neuro
 
             _last_input = image;
 
-            for (int n = 0; n < values[0].Length; n++)
+            // first layer
+            for (int neuron = 0; neuron < values[0].Length; neuron++)
             {
-                var n_weight = weights[0][n][0];
-                //var sum = input.Zip(n_weigths, (i, w) => i * w).Sum();
-                values[0][n] = ActivatonFunc(n_weight * image[n]);
+                var n_weight = weights[0][neuron][0]; // neurons on 1st layer have only 1 input and weight each
+
+                var sum = n_weight * image[neuron];
+                values[0][neuron] = ActivatonFunc(sum);
+
+                if (_neurons_sums != null)
+                {
+                    _neurons_sums[0][neuron] = sum;
+                }
             }
 
+            // other layers
             for (int layer = 1; layer < NN_LAYERS; layer++)
             {
-                for (int n = 0; n < values[layer].Length; n++)
+                for (int neuron = 0; neuron < values[layer].Length; neuron++)
                 {
-                    var n_weights = weights[layer][n];
-                    var sum = values[layer - 1].Zip(n_weights, (i, w) => i * w).Sum();
+                    var n_weights = weights[layer][neuron];
+                    var sum = values[layer - 1].Zip(n_weights, (n, w) => n * w).Sum();
 
                     if (_neurons_sums != null)
                     {
-                        _neurons_sums[layer][n] = sum;
+                        _neurons_sums[layer][neuron] = sum;
                     }
 
-                    values[layer][n] = ActivatonFunc(sum);
+                    values[layer][neuron] = ActivatonFunc(sum);
                 }
             }
 
@@ -186,7 +194,7 @@ namespace Neuro
                 {
                     for (int n_input = 0; n_input < weights[layer + 1][neuron].Length; n_input++)
                     {
-                        var s_sum = _sigmas[layer + 1].Zip(weights[layer + 1][neuron], (s, w) => s * w).Sum(); // / _sigmas[layer + 1].Length;
+                        var s_sum = _sigmas[layer + 1].Zip(weights[layer + 1][neuron], (s, w) => s * w).Sum() / _sigmas[layer + 1].Length;
                         _sigmas[layer][neuron] = s_sum;
 
                         _weightDeltas[layer][neuron][n_input] +=
@@ -200,7 +208,7 @@ namespace Neuro
 
             for (var neuron = 0; neuron < values[0].Length; neuron++)
             {
-                var s_sum = _sigmas[0].Zip(weights[0][neuron], (s, w) => s * w).Sum(); // / _sigmas[0].Length;
+                var s_sum = _sigmas[0].Zip(weights[0][neuron], (s, w) => s * w).Sum() / _sigmas[0].Length;
                 _sigmas[0][neuron] = s_sum;
 
                 _weightDeltas[0][neuron][0] +=
