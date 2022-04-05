@@ -13,6 +13,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Threading;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace Neuro
 {
@@ -34,6 +37,16 @@ namespace Neuro
         private const int LEARN_ERAS = 5;
 
         private const string WEIGTHTS_PATH = "./weigths.json";
+
+        #region console
+
+        [DllImport("Kernel32")]
+        public static extern void AllocConsole();
+
+        [DllImport("Kernel32")]
+        public static extern void FreeConsole();
+
+        #endregion
 
         public MainWindow()
         {
@@ -61,14 +74,37 @@ namespace Neuro
         private void CheckThis(object sender, RoutedEventArgs e)
         {
             var img = images[indexCurrent];
-            var output = _nn.Run(img.ImagePixels);
+            var output = _nn.Run(img.Pixels);
             PrintVerdict(output);
         }
 
         private void Button_Learn(object sender, RoutedEventArgs e)
         {
+            AllocConsole();
 
+            const int data_length = 500;
+            var test_data = images.Take(data_length).ToArray();
+            var sw = Stopwatch.StartNew();
+            for (var era = 0; era < LEARN_ERAS; era++)
+            {
+                _nn.InitLearn();
+                var index = 0;
+                foreach (var img in test_data)
+                {
+                    _nn.Learn(img, era, index);
+                    index++;
+                }
+                _nn.ApplyWeightDeltas();
+            }
+            sw.Stop();
+            Console.WriteLine($"learned on {data_length} images in {sw.Elapsed.ToString("G")}");
+            Console.ReadKey();
+            FreeConsole();
         }
+
+        private readonly Brush _transparent = Brushes.Transparent;
+        private readonly Brush _green = Brushes.LimeGreen;
+
 
         private void Button_NextIndex(object sender, RoutedEventArgs e)
         {
@@ -101,7 +137,7 @@ namespace Neuro
                     DPI, DPI,
                     PIXEL_FORMAT,
                     null,
-                    img.ImagePixels,
+                    img.PixelBytes,
                     BM_STRIDE);
                 ImgOutput.Source = bm;
                 LabelOutput.Content = img.Label.ToString();

@@ -13,13 +13,14 @@
         <Button Content="Check this" HorizontalAlignment="Left" Margin="156,115,0,0" VerticalAlignment="Top" Width="77" Click="CheckThis"/>
         <Label Content="Label" HorizontalAlignment="Left" Margin="431,7,0,0" VerticalAlignment="Top" Width="359" Height="39" Name="debug"/>
         <Label Content="0" HorizontalAlignment="Left" Margin="278,55,0,0" VerticalAlignment="Top" Name="Index"/>
-        <ProgressBar Height="10" Width="100" Margin="510,282,190,142" x:Name="LearnProgress"/>
+        <ProgressBar Height="10" Width="100" Margin="557,262,143,162" x:Name="LearnProgress" Background="#CCC" Minimum="0" Maximum="1"/>
         <Button Content="Learn" HorizontalAlignment="Left" Margin="510,257,0,0" VerticalAlignment="Top" Click="Button_Learn" Width="42"/>
         <Button Content="Next Index" HorizontalAlignment="Left" Margin="238,115,0,0" VerticalAlignment="Top" Width="79" Click="Button_NextIndex"/>
         <Button Content="Reset index" HorizontalAlignment="Left" Margin="186,58,0,0" VerticalAlignment="Top" Click="Button_ResetIndex"/>
         <Button Content="Save" HorizontalAlignment="Left" Margin="510,297,0,0" VerticalAlignment="Top" Width="42" Click="Button_Save"/>
         <Button Content="Load" HorizontalAlignment="Left" Margin="510,322,0,0" VerticalAlignment="Top" Width="42" Click="Button_Load"/>
         <Button Content="Prev Index" HorizontalAlignment="Left" Margin="72,115,0,0" VerticalAlignment="Top" Width="79" Click="Button_PrevIndex"/>
+        <Rectangle HorizontalAlignment="Left" Height="20" Margin="662,257,0,0" Stroke="Black" VerticalAlignment="Top" Width="20" Name="Progress_Check"/>
 
     </Grid>
 </Window>

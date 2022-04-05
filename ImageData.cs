@@ -8,26 +8,17 @@ namespace Neuro
 {
     internal class ImageData
     {
-        public byte[]? ImagePixels { get; set; }
-        public byte? Label { get; set; }
+        public byte[] PixelBytes { get; set; }
+        public double[] Pixels { get; private set; }
+        public byte Label { get; set; }
 
-        public ImageData(byte[]? imagePixels, byte? label)
+        public ImageData(byte[] imagePixels, byte label)
         {
-            ImagePixels = imagePixels;
+            PixelBytes = imagePixels;
             Label = label;
-        }
 
-        public byte[] GetImgPixels3Col()
-        {
-            if (ImagePixels == null) return new byte[0];
-            var pixels = new List<byte>(ImagePixels.Length * 3);
-            foreach(var pixel in ImagePixels)
-            {
-                pixels.Add(pixel);
-                pixels.Add(pixel);
-                pixels.Add(pixel);
-            }
-            return pixels.ToArray();
+            Pixels = imagePixels.Select(b => NormalizeByte(b)).ToArray();
         }
+        private double NormalizeByte(byte b) => 1d * b / byte.MaxValue;
     }
 }
