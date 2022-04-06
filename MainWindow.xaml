@@ -21,6 +21,7 @@
         <Button Content="Load" HorizontalAlignment="Left" Margin="510,322,0,0" VerticalAlignment="Top" Width="42" Click="Button_Load"/>
         <Button Content="Prev Index" HorizontalAlignment="Left" Margin="72,115,0,0" VerticalAlignment="Top" Width="79" Click="Button_PrevIndex"/>
         <Rectangle HorizontalAlignment="Left" Height="20" Margin="662,257,0,0" Stroke="Black" VerticalAlignment="Top" Width="20" Name="Progress_Check"/>
+        <Button Content="Reset" HorizontalAlignment="Left" Margin="510,347,0,0" VerticalAlignment="Top" Width="42" Click="Button_Reset"/>
 
     </Grid>
 </Window>

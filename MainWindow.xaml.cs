@@ -46,6 +46,16 @@ namespace Neuro
         [DllImport("Kernel32")]
         public static extern void FreeConsole();
 
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        const int SW_HIDE = 0;
+        const int SW_SHOW = 5;
+        private IntPtr _console;
+
         #endregion
 
         public MainWindow()
@@ -57,6 +67,9 @@ namespace Neuro
             images = DatasetReader.GetImages();
             _nn = new();
 
+            AllocConsole();
+            _console = GetConsoleWindow();
+            ShowWindow(_console, SW_HIDE);
             UpdateUI();
         }
 
@@ -80,9 +93,10 @@ namespace Neuro
 
         private void Button_Learn(object sender, RoutedEventArgs e)
         {
-            AllocConsole();
+            ShowWindow(_console, SW_SHOW);
 
-            const int data_length = 500;
+
+            const int data_length = 1000;
             var test_data = images.Take(data_length).ToArray();
             var sw = Stopwatch.StartNew();
             for (var era = 0; era < LEARN_ERAS; era++)
@@ -99,7 +113,8 @@ namespace Neuro
             sw.Stop();
             Console.WriteLine($"learned on {data_length} images in {sw.Elapsed.ToString("G")}");
             Console.ReadKey();
-            FreeConsole();
+
+            ShowWindow(_console, SW_HIDE);
         }
 
         private readonly Brush _transparent = Brushes.Transparent;
@@ -156,6 +171,11 @@ namespace Neuro
             var w_str = File.ReadAllText(WEIGTHTS_PATH);
             var w = Newtonsoft.Json.JsonConvert.DeserializeObject<double[][][]>(w_str);
             _nn = new(w);
+        }
+
+        private void Button_Reset(object sender, RoutedEventArgs e)
+        {
+            _nn = new();
         }
     }
 }
