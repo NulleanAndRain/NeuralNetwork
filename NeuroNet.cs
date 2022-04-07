@@ -18,6 +18,8 @@ namespace Neuro
         private const int INTERNAL_LAYER_NEURONS = 32;
         public const int OUTPUT_NEURONS = 10;
 
+        public const double BIAS = 1;
+
         #region activation functions
 
         private double Softsign(double d)
@@ -64,8 +66,9 @@ namespace Neuro
                 }
                 else
                 {
-                    values[layer] = new double[INTERNAL_LAYER_NEURONS];
-                    weights[layer] = new double[INTERNAL_LAYER_NEURONS][];
+                    values[layer] = new double[INTERNAL_LAYER_NEURONS + 1];
+                    weights[layer] = new double[INTERNAL_LAYER_NEURONS + 1][];
+                    values[layer][^1] = BIAS;
                 }
                 for (var neuron_index = 0; neuron_index < weights[layer].Length; neuron_index++)
                 {
@@ -73,7 +76,7 @@ namespace Neuro
                     else weights[layer][neuron_index] = new double[values[layer - 1].Length];
 
                     if (generateRandWeights)
-                        weights[layer][neuron_index] = weights[layer][neuron_index].Select(_ => rnd.NextDouble()).ToArray();
+                        weights[layer][neuron_index] = weights[layer][neuron_index].Select(_ => rnd.NextDouble()/10).ToArray();
                 }
             }
             ActivatonFunc = Softsign;
@@ -118,6 +121,7 @@ namespace Neuro
             {
                 for (int neuron = 0; neuron < values[layer].Length; neuron++)
                 {
+                    if (layer != NN_LAYERS - 1 && neuron == values[layer].Length - 1) continue;
                     var n_weights = weights[layer][neuron];
                     var sum = values[layer - 1].Zip(n_weights, (n, w) => n * w).Sum();
 
@@ -138,7 +142,7 @@ namespace Neuro
         private double[][] _sigmas;
         private double[][][] _weightDeltas;
 
-        const double LEARN_RATE = 0.9d;
+        const double LEARN_RATE = 1d;
 
         public void InitLearn()
         {
@@ -170,37 +174,38 @@ namespace Neuro
 
             var predicted = Run(data.Pixels);
 
-            // last layer
-            var lastLayer = values[^1];
+            _sigmas[^1] = expected.Zip(predicted, (e, p) => p - e).ToArray();
 
-            _sigmas[^1] = expected.Zip(predicted, (e, p) => e - p).ToArray();
-
-
+            // first layer
             for (int neuron = 0; neuron < values[^1].Length; neuron++)
             {
-                for (int n_input = 0; n_input < weights[^1][neuron].Length; n_input++)
+                const int layer = NN_LAYERS - 1;
+                //_sigmas[^1][neuron] *= DerivativeFunc(_neurons_sums[^1][neuron]);
+                for (int n_input = 0; n_input < weights[layer][neuron].Length; n_input++)
                 {
-                    _weightDeltas[^1][neuron][n_input] = 
-                        DerivativeFunc(_neurons_sums[^1][neuron]) * 
-                        values[^2][n_input] * 
-                        _sigmas[^1][neuron] * 
+                    _weightDeltas[layer][neuron][n_input] += 
+                        //DerivativeFunc(_neurons_sums[layer][neuron]) *
+                        _sigmas[layer][neuron] *
+                        values[layer - 1][n_input] *
                         LEARN_RATE;
                 }
             }
 
             for (var layer = NN_LAYERS - 2; layer > 0; layer--)
             {
-                for (int neuron = 0; neuron < values[layer + 1].Length; neuron++)
+                for (int neuron = 0; neuron < values[layer].Length; neuron++)
                 {
-                    for (int n_input = 0; n_input < weights[layer + 1][neuron].Length; n_input++)
+                    var sigmas_weighted_sum = _sigmas[layer + 1].Zip(weights[layer + 1], (s, w) => s * w[neuron]).Sum();
+
+                    _sigmas[layer][neuron] = sigmas_weighted_sum;
+
+                    for (int n_input = 0; n_input < weights[layer][neuron].Length; n_input++)
                     {
-                        var s_sum = _sigmas[layer + 1].Zip(weights[layer + 1][neuron], (s, w) => s * w).Sum() / _sigmas[layer + 1].Length;
-                        _sigmas[layer][neuron] = s_sum;
 
                         _weightDeltas[layer][neuron][n_input] +=
-                            DerivativeFunc(_neurons_sums[layer - 1][neuron]) *
-                            values[layer - 1][neuron] *
-                            s_sum *
+                            //DerivativeFunc(_neurons_sums[layer][neuron]) *
+                            sigmas_weighted_sum *
+                            values[layer - 1][n_input] *
                             LEARN_RATE;
                     }
                 }
@@ -208,16 +213,23 @@ namespace Neuro
 
             for (var neuron = 0; neuron < values[0].Length; neuron++)
             {
-                var s_sum = _sigmas[0].Zip(weights[0][neuron], (s, w) => s * w).Sum() / _sigmas[0].Length;
-                _sigmas[0][neuron] = s_sum;
+                const int layer = 0;
 
-                _weightDeltas[0][neuron][0] +=
-                    DerivativeFunc(_last_input[neuron]) *
-                    _last_input[neuron] *
-                    s_sum *
-                    LEARN_RATE;
+                var sigmas_weighted_sum = _sigmas[layer + 1].Zip(weights[layer + 1], (s, w) => s * w[neuron]).Sum();
+                _sigmas[layer][neuron] = sigmas_weighted_sum;
+
+                for (int n_input = 0; n_input < weights[layer][neuron].Length; n_input++)
+                {
+                    _weightDeltas[layer][neuron][n_input] +=
+                        //DerivativeFunc(_neurons_sums[layer][neuron]) *
+                        sigmas_weighted_sum *
+                        _last_input[neuron] *
+                        LEARN_RATE;
+                }
             }
+
             Console.WriteLine($"era {era}: learned image #{index} ({data.Label})");
+
         }
 
         public void ApplyWeightDeltas()
