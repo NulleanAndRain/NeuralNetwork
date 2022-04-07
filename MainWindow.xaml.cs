@@ -28,7 +28,7 @@ namespace Neuro
         private readonly PixelFormat PIXEL_FORMAT;
         private readonly int BM_STRIDE;
 
-        private NeuroNet _nn;
+        private MatrixNeuroNet _nn;
 
         private int indexCurrent = 0;
 
@@ -87,14 +87,14 @@ namespace Neuro
             var sw = Stopwatch.StartNew();
             for (var era = 0; era < LEARN_ERAS; era++)
             {
-                _nn.InitLearn();
+                //_nn.InitLearn();
                 var index = 0;
                 foreach (var img in test_data)
                 {
                     _nn.Learn(img, era, index);
                     index++;
                 }
-                _nn.ApplyWeightDeltas();
+                //_nn.ApplyWeightDeltas();
             }
             sw.Stop();
             Console.WriteLine($"learned on {data_length} images in {sw.Elapsed.ToString("G")}");
@@ -154,8 +154,7 @@ namespace Neuro
         {
             if (!File.Exists(WEIGTHTS_PATH)) return;
             var w_str = File.ReadAllText(WEIGTHTS_PATH);
-            var w = Newtonsoft.Json.JsonConvert.DeserializeObject<double[][][]>(w_str);
-            _nn = new(w);
+            _nn.LoadWeigths(w_str);
         }
     }
 }
