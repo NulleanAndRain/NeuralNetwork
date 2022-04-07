@@ -96,35 +96,34 @@ namespace Neuro
             {
                 const int layer = NN_LAYERS - 1;
 
-                var weights = _weightedSums[layer]
-                    .Map(SoftsignDerivative, SKIP_ZEROS);
-                var transposed = _values[layer - 1].Transpose();
+                var derivative = _weightedSums[layer].Map(SoftsignDerivative, SKIP_ZEROS);
 
-                deltas[layer] = transposed
-                    .Multiply(weights)
+                deltas[layer] = _values[layer - 1]
+                    .TransposeThisAndMultiply(derivative)
                     .Multiply(sigma);
             }
+
             for (int layer = NN_LAYERS - 2; layer > 0; layer--)
             {
-                var weights = _weightedSums[layer]
-                    .Map(SoftsignDerivative, SKIP_ZEROS);
-                var transposed = _values[layer - 1].Transpose();
+                var derivative = _weightedSums[layer].Map(SoftsignDerivative, SKIP_ZEROS);
 
-                deltas[layer] = transposed
-                    .Multiply(weights)
-                    .Multiply(deltas[layer + 1]);
+                deltas[layer] = deltas[layer + 1]
+                    .TransposeAndMultiply(_weights[layer + 1])
+                    .TransposeAndMultiply(derivative)
+                    .Multiply(_values[layer - 1])
+                    .Transpose();
             }
 
             {
                 const int layer = 0;
 
-                var weights = _weightedSums[layer]
-                    .Map(SoftsignDerivative, SKIP_ZEROS);
-                var transposed = Matrix<double>.Build.DenseOfRowArrays(data.Pixels);
+                var values = Matrix<double>.Build.DenseOfDiagonalArray(data.Pixels);
+                var derivative = _weightedSums[layer].Map(SoftsignDerivative, SKIP_ZEROS);
 
-                deltas[layer] = transposed
-                    .Multiply(weights)
-                    .Multiply(deltas[layer + 1]);
+                deltas[layer] = deltas[layer + 1]
+                    .TransposeAndMultiply(_weights[layer + 1])
+                    .Multiply(values)
+                    .TransposeAndMultiply(derivative);
             }
 
             for (int layer = 0; layer < NN_LAYERS; layer++)
