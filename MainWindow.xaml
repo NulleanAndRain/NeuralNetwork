@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Image Height="100" Width="100" Margin="183,167,517,167" Name="ImgOutput"/>
+        <Image Margin="151,157,0,0"  Name="ImgOutput" Width="100" Height="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
         <Label Content="Label" HorizontalAlignment="Left" Margin="298,0,0,0" VerticalAlignment="Center" Name="LabelOutput"/>
         <Label Content="Label" Margin="37,262,464,112" Name="verdict"/>
         <Button Content="Check this" HorizontalAlignment="Left" Margin="156,115,0,0" VerticalAlignment="Top" Width="77" Click="CheckThis"/>
@@ -26,6 +26,8 @@
         <Label Content="Dataset images" HorizontalAlignment="Left" Margin="677,239,0,0" VerticalAlignment="Top"/>
         <Label Content="Eras" HorizontalAlignment="Left" Margin="682,276,0,0" VerticalAlignment="Top"/>
         <Label Name="ImgCountLabel" Content="500" HorizontalAlignment="Left" Margin="682,259,0,0" VerticalAlignment="Top"/>
+        <Image Height="100" Width="100" Margin="479,115,0,0" x:Name="ImgOutput_Weights" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+        <Image Height="100" Width="100" Margin="585,115,0,0" x:Name="ImgOutput_WeightedImg" VerticalAlignment="Top" HorizontalAlignment="Left"/>
 
     </Grid>
 </Window>

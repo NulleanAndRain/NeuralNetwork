@@ -21,14 +21,13 @@ namespace Neuro
 
         private const int IMAGE_PIXELS = DatasetReader.IMAGE_PIXELS;
         private const int OUTPUT_NEURONS = 10;
-        private const double LEARN_RATE = 0.8;
 
 
         private const int NN_LAYERS = 3;
         private readonly int[] INTERNAL_NEURONS = new int[NN_LAYERS] 
         {
             IMAGE_PIXELS, 
-            192, 
+            192,
             //128, 
             //128, 
             //32, 
@@ -37,6 +36,9 @@ namespace Neuro
 
         public MatrixNeuroNet()
         {
+            var dist = Normal.WithMeanVariance(0.9, 0.1);
+            //dist.M
+
             _values = new Matrix[NN_LAYERS];
             _weights = new Matrix[NN_LAYERS];
             _weightedSums = new Matrix[NN_LAYERS];
@@ -44,15 +46,14 @@ namespace Neuro
             _deltas = new Matrix<double>[NN_LAYERS];
             _acc = new Matrix<double>[NN_LAYERS];
 
-            _weights[0] = Matrix.Build.Random(IMAGE_PIXELS, 1);
+            _weights[0] = Matrix.Build.Random(IMAGE_PIXELS, 1, dist);
             _values[0] = Matrix.Build.Dense(1, IMAGE_PIXELS);
             _weightedSums[0] = Matrix.Build.Dense(1, IMAGE_PIXELS);
 
-            _weights[^1] = Matrix.Build.Random(INTERNAL_NEURONS[^2], OUTPUT_NEURONS);
+            _weights[^1] = Matrix.Build.Random(INTERNAL_NEURONS[^2], OUTPUT_NEURONS, dist);
             _values[^1] = Matrix.Build.Dense(1, OUTPUT_NEURONS);
             _weightedSums[^1] = Matrix.Build.Dense(1, OUTPUT_NEURONS);
 
-            var dist = Normal.WithMeanVariance(0.4, 0.1);
             for (int i = 1; i < NN_LAYERS - 1; i++)
             {
                 _weights[i] = Matrix.Build.Random(INTERNAL_NEURONS[i - 1], INTERNAL_NEURONS[i], dist);
@@ -98,6 +99,7 @@ namespace Neuro
             return _values[^1].Row(0).ToArray();
         }
 
+        private const double LEARN_RATE = 1.12;
         public void Learn(ImageData data, int era, int index)
         {
             const Zeros SKIP_ZEROS = Zeros.AllowSkip;
@@ -108,30 +110,15 @@ namespace Neuro
 
             var exp = Matrix<double>.Build.DenseOfRowArrays(expected);
 
-            //var mse = predicted.Zip(expected, (p, e) => (p - e) * (p - e)).Sum() / predicted.Length;
-            //var sigma = predicted.Zip(expected, (p, e) => e - p).Sum() / predicted.Length;
-
-            //var _a = _values[^1]
-            //.TransposeThisAndMultiply(_values[^1])
-            //.Inverse()
-            //.TransposeAndMultiply(_values[^1])
-            //.Transpose();
-
-            //var _y = _values[^1] * _a;
-            //var errorMatrix = exp - _a;
-            //var sigma = errorMatrix;
             var sigma = exp - _values[^1];
 
             var vec = sigma.Column(0);
-
             var mse = vec.Select(s => s * s).Sum() / sigma.ColumnCount;
 
             // m1(x1, y1) * m2(x2, y2) = m3(x1, y2)
 
             {
                 const int layer = NN_LAYERS - 1;
-
-                //_weightedSums[layer].Map(SoftsignDerivative, _weightedSums[layer], SKIP_ZEROS);
 
                 _values[layer - 1]
                     //.TransposeThisAndMultiply(_weightedSums[layer])
@@ -147,7 +134,6 @@ namespace Neuro
                     .TransposeThisAndMultiply(_weightedSums[layer])
                     .Multiply(_deltas[layer + 1])
                     .TransposeAndMultiply(_weights[layer + 1], _deltas[layer]);
-                //.Transpose(_deltas[layer]);
             }
 
             {
@@ -161,10 +147,9 @@ namespace Neuro
                     .TransposeAndMultiply(_weightedSums[layer], _deltas[layer]);
             }
 
-            var r = LEARN_RATE * mse;
             for (int layer = 0; layer < NN_LAYERS; layer++)
             {
-                _deltas[layer].Multiply(r, _deltas[layer]);
+                _deltas[layer].Multiply(LEARN_RATE, _deltas[layer]);
                 //_acc[layer].Add(_deltas[layer], _acc[layer]);
                 _weights[layer].Add(_acc[layer], _weights[layer]);
             }
@@ -206,5 +191,7 @@ namespace Neuro
             var w = _weights.Select(w => w.ToRowArrays()).ToArray();
             return Newtonsoft.Json.JsonConvert.SerializeObject(w);
         }
+
+        public double[] GetInputWeights() => _weights[0].Column(0).AsArray();
     }
 }

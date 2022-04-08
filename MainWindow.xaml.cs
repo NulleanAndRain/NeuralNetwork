@@ -25,7 +25,7 @@ namespace Neuro
     public partial class MainWindow : Window
     {
         private const double DPI = 96d;
-        private readonly PixelFormat PIXEL_FORMAT;
+        private readonly PixelFormat PIXEL_FORMAT_BYTE;
         private readonly int BM_STRIDE;
         private const string WEIGTHTS_PATH = "./weigths.json";
 
@@ -52,12 +52,15 @@ namespace Neuro
         const int SW_SHOW = 5;
         private IntPtr _console;
 
+        private void ShowConsole() => ShowWindow(_console, SW_SHOW);
+        private void HidConsole() => ShowWindow(_console, SW_HIDE);
+
         #endregion
 
         public MainWindow()
         {
-            PIXEL_FORMAT = PixelFormats.Gray8;
-            BM_STRIDE = (DatasetReader.IMAGES_SIZE_X * PIXEL_FORMAT.BitsPerPixel + 7) / 8;
+            PIXEL_FORMAT_BYTE = PixelFormats.Gray8;
+            BM_STRIDE = (DatasetReader.IMAGES_SIZE_X * PIXEL_FORMAT_BYTE.BitsPerPixel + 7) / 8;
             InitializeComponent();
 
             images = DatasetReader.GetImages();
@@ -112,18 +115,42 @@ namespace Neuro
         private void UpdateUI()
         {
             var img = images[indexCurrent];
+            _nn.Run(img.Pixels);
             if (img != null)
             {
                 var bm = BitmapSource.Create(
                     DatasetReader.IMAGES_SIZE_X,
                     DatasetReader.IMAGES_SIZE_Y,
                     DPI, DPI,
-                    PIXEL_FORMAT,
+                    PIXEL_FORMAT_BYTE,
                     null,
                     img.PixelBytes,
                     BM_STRIDE);
                 ImgOutput.Source = bm;
                 LabelOutput.Content = img.Label.ToString();
+
+
+                var bm_weights = BitmapSource.Create(
+                    DatasetReader.IMAGES_SIZE_X,
+                    DatasetReader.IMAGES_SIZE_Y,
+                    DPI, DPI,
+                    PIXEL_FORMAT_BYTE,
+                    null,
+                    _nn.GetInputWeights().Select(d => (byte)(d*255)).ToArray(),
+                    BM_STRIDE);
+
+                ImgOutput_Weights.Source = bm_weights;
+
+                var bm_weightedInputs = BitmapSource.Create(
+                    DatasetReader.IMAGES_SIZE_X,
+                    DatasetReader.IMAGES_SIZE_Y,
+                    DPI, DPI,
+                    PIXEL_FORMAT_BYTE,
+                    null,
+                    img.Pixels.Zip(_nn.GetInputWeights(), (px, w) => (byte)(px * w * 255)).ToArray(),
+                    BM_STRIDE);
+
+                ImgOutput_WeightedImg.Source = bm_weightedInputs;
             }
             Index.Content = indexCurrent;
         }
@@ -143,6 +170,7 @@ namespace Neuro
         private void Button_Reset(object sender, RoutedEventArgs e)
         {
             _nn = new();
+            UpdateUI();
         }
 
         private void ImagesCount_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -159,8 +187,7 @@ namespace Neuro
         private const int LEARN_ERAS = 1;
         private void Button_Learn(object sender, RoutedEventArgs e)
         {
-            ShowWindow(_console, SW_SHOW);
-
+            ShowConsole();
 
             int data_length = (int)ImagesCount.Value;
             var erasParse = int.TryParse(Eras.Text, out int eras);
@@ -183,7 +210,7 @@ namespace Neuro
             Console.WriteLine($"learned on {data_length} images in {eras} eras in {sw.Elapsed.ToString("G")}");
             Console.ReadKey();
 
-            ShowWindow(_console, SW_HIDE);
+            HidConsole();
         }
 
         #endregion
