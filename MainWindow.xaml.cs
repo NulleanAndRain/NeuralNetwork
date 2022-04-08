@@ -24,19 +24,15 @@ namespace Neuro
     /// </summary>
     public partial class MainWindow : Window
     {
-        const double DPI = 96d;
+        private const double DPI = 96d;
         private readonly PixelFormat PIXEL_FORMAT;
         private readonly int BM_STRIDE;
+        private const string WEIGTHTS_PATH = "./weigths.json";
 
         private MatrixNeuroNet _nn;
-
-        private int indexCurrent = 0;
-
         private List<ImageData> images;
 
-        private const int LEARN_ERAS = 5;
-
-        private const string WEIGTHTS_PATH = "./weigths.json";
+        private int indexCurrent = 0;
 
         #region console
 
@@ -73,6 +69,8 @@ namespace Neuro
             UpdateUI();
         }
 
+        #region controls
+
         private void PrintVerdict(double[] output)
         {
             var _l = output.ToList();
@@ -81,7 +79,7 @@ namespace Neuro
             var msg = $"Possibly it is digit {indexMax} (possibility: {(maxVal * 100).ToString("F2")}%)";
             verdict.Content = msg;
 
-            debug.Content = '[' + string.Join(", ", output.Select(o => o.ToString("F2"))) + ']';
+            debug.Content = '[' + string.Join(", ", output.Select(o => o.ToString("F2").PadLeft(5))) + ']';
         }
 
         private void CheckThis(object sender, RoutedEventArgs e)
@@ -90,36 +88,6 @@ namespace Neuro
             var output = _nn.Run(img.Pixels);
             PrintVerdict(output);
         }
-
-        private void Button_Learn(object sender, RoutedEventArgs e)
-        {
-            ShowWindow(_console, SW_SHOW);
-
-
-            const int data_length = 1000;
-            var test_data = images.Take(data_length).ToArray();
-            var sw = Stopwatch.StartNew();
-            for (var era = 0; era < LEARN_ERAS; era++)
-            {
-                //_nn.InitLearn();
-                var index = 0;
-                foreach (var img in test_data)
-                {
-                    _nn.Learn(img, era, index);
-                    index++;
-                }
-                //_nn.ApplyWeightDeltas();
-            }
-            sw.Stop();
-            Console.WriteLine($"learned on {data_length} images in {sw.Elapsed.ToString("G")}");
-            Console.ReadKey();
-
-            ShowWindow(_console, SW_HIDE);
-        }
-
-        private readonly Brush _transparent = Brushes.Transparent;
-        private readonly Brush _green = Brushes.LimeGreen;
-
 
         private void Button_NextIndex(object sender, RoutedEventArgs e)
         {
@@ -176,5 +144,48 @@ namespace Neuro
         {
             _nn = new();
         }
+
+        private void ImagesCount_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (ImgCountLabel == null) return;
+            ImgCountLabel.Content = (int?)ImagesCount?.Value ?? 500;
+        }
+
+        #endregion
+
+        #region learning
+
+        // nn learning
+        private const int LEARN_ERAS = 1;
+        private void Button_Learn(object sender, RoutedEventArgs e)
+        {
+            ShowWindow(_console, SW_SHOW);
+
+
+            int data_length = (int)ImagesCount.Value;
+            var erasParse = int.TryParse(Eras.Text, out int eras);
+            if (!erasParse) eras = LEARN_ERAS;
+
+            var test_data = images.Take(data_length).ToArray();
+            var sw = Stopwatch.StartNew();
+            for (var era = 0; era < eras; era++)
+            {
+                _nn.InitLearn();
+                var index = 0;
+                foreach (var img in test_data)
+                {
+                    _nn.Learn(img, era, index);
+                    index++;
+                }
+                _nn.ApplyWeightDeltas();
+            }
+            sw.Stop();
+            Console.WriteLine($"learned on {data_length} images in {eras} eras in {sw.Elapsed.ToString("G")}");
+            Console.ReadKey();
+
+            ShowWindow(_console, SW_HIDE);
+        }
+
+        #endregion
     }
 }
