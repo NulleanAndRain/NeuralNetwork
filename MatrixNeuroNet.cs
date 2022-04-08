@@ -18,11 +18,22 @@ namespace Neuro
         private Matrix<double>[] _deltas;
         private Matrix<double>[] _acc;
 
-        private const int NN_LAYERS = 6;
-        private const int INTERNAL_NEURONS = 128;
+
         private const int IMAGE_PIXELS = DatasetReader.IMAGE_PIXELS;
         private const int OUTPUT_NEURONS = 10;
         private const double LEARN_RATE = 0.8;
+
+
+        private const int NN_LAYERS = 3;
+        private readonly int[] INTERNAL_NEURONS = new int[NN_LAYERS] 
+        {
+            IMAGE_PIXELS, 
+            192, 
+            //128, 
+            //128, 
+            //32, 
+            OUTPUT_NEURONS 
+        };
 
         public MatrixNeuroNet()
         {
@@ -37,18 +48,16 @@ namespace Neuro
             _values[0] = Matrix.Build.Dense(1, IMAGE_PIXELS);
             _weightedSums[0] = Matrix.Build.Dense(1, IMAGE_PIXELS);
 
-            _weights[^1] = Matrix.Build.Random(INTERNAL_NEURONS, OUTPUT_NEURONS);
+            _weights[^1] = Matrix.Build.Random(INTERNAL_NEURONS[^2], OUTPUT_NEURONS);
             _values[^1] = Matrix.Build.Dense(1, OUTPUT_NEURONS);
             _weightedSums[^1] = Matrix.Build.Dense(1, OUTPUT_NEURONS);
 
-            int rows = IMAGE_PIXELS;
             var dist = Normal.WithMeanVariance(0.4, 0.1);
             for (int i = 1; i < NN_LAYERS - 1; i++)
             {
-                _weights[i] = Matrix.Build.Random(rows, INTERNAL_NEURONS, dist);
-                _values[i] = Matrix.Build.Dense(1, INTERNAL_NEURONS);
-                _weightedSums[i] = Matrix.Build.Dense(1, INTERNAL_NEURONS);
-                rows = INTERNAL_NEURONS;
+                _weights[i] = Matrix.Build.Random(INTERNAL_NEURONS[i - 1], INTERNAL_NEURONS[i], dist);
+                _values[i] = Matrix.Build.Dense(1, INTERNAL_NEURONS[i]);
+                _weightedSums[i] = Matrix.Build.Dense(1, INTERNAL_NEURONS[i]);
             }
 
             for (int i = 0; i < NN_LAYERS; i++)
@@ -97,30 +106,48 @@ namespace Neuro
             var expected = new double[OUTPUT_NEURONS];
             expected[data.Label] = 1;
 
-            var mse = predicted.Zip(expected, (p, e) => (p - e) * (p - e)).Sum() / predicted.Length;
+            var exp = Matrix<double>.Build.DenseOfRowArrays(expected);
 
-            var sigma = predicted.Zip(expected, (p, e) => e - p).Sum() / predicted.Length;
+            //var mse = predicted.Zip(expected, (p, e) => (p - e) * (p - e)).Sum() / predicted.Length;
+            //var sigma = predicted.Zip(expected, (p, e) => e - p).Sum() / predicted.Length;
 
+            //var _a = _values[^1]
+            //.TransposeThisAndMultiply(_values[^1])
+            //.Inverse()
+            //.TransposeAndMultiply(_values[^1])
+            //.Transpose();
+
+            //var _y = _values[^1] * _a;
+            //var errorMatrix = exp - _a;
+            //var sigma = errorMatrix;
+            var sigma = exp - _values[^1];
+
+            var vec = sigma.Column(0);
+
+            var mse = vec.Select(s => s * s).Sum() / sigma.ColumnCount;
 
             // m1(x1, y1) * m2(x2, y2) = m3(x1, y2)
 
             {
                 const int layer = NN_LAYERS - 1;
 
-                _weightedSums[layer].Map(SoftsignDerivative, _weightedSums[layer], SKIP_ZEROS);
+                //_weightedSums[layer].Map(SoftsignDerivative, _weightedSums[layer], SKIP_ZEROS);
 
-                _values[layer - 1].TransposeThisAndMultiply(_weightedSums[layer], _deltas[layer]);
-                _deltas[layer].Multiply(sigma, _deltas[layer]);
+                _values[layer - 1]
+                    //.TransposeThisAndMultiply(_weightedSums[layer])
+                    .TransposeThisAndMultiply(sigma, _deltas[layer]);
+                    //.TransposeAndMultiply(_weights[layer + 1], _deltas[layer]);
             }
 
             for (int layer = NN_LAYERS - 2; layer > 0; layer--)
             {
                 _weightedSums[layer].Map(SoftsignDerivative, _weightedSums[layer], SKIP_ZEROS);
 
-                _weights[layer + 1].TransposeAndMultiply(_deltas[layer + 1])
-                    .TransposeAndMultiply(_weightedSums[layer])
-                    .Multiply(_values[layer - 1])
-                    .Transpose(_deltas[layer]);
+                _values[layer - 1]
+                    .TransposeThisAndMultiply(_weightedSums[layer])
+                    .Multiply(_deltas[layer + 1])
+                    .TransposeAndMultiply(_weights[layer + 1], _deltas[layer]);
+                //.Transpose(_deltas[layer]);
             }
 
             {
@@ -142,7 +169,7 @@ namespace Neuro
                 _weights[layer].Add(_acc[layer], _weights[layer]);
             }
 
-            Console.WriteLine($"era {era}: learned image #{index.ToString().PadRight(4)} ({data.Label}) | error: {mse.ToString().PadRight(20)}    sigma: {sigma}");
+            Console.WriteLine($"era {era}: learned image #{index.ToString().PadRight(4)} ({data.Label}) | error: {mse}");
         }
 
         public void InitLearn()
@@ -167,6 +194,7 @@ namespace Neuro
         public void LoadWeigths(string str)
         {
             var w = Newtonsoft.Json.JsonConvert.DeserializeObject<double[][][]>(str);
+            if (w == null) return;
             for (int i = 0; i < w.Length; i++)
             {
                 _weights[i] = Matrix<double>.Build.DenseOfRowArrays(w[i]);
