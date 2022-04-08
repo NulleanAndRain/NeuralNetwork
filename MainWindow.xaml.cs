@@ -53,7 +53,7 @@ namespace Neuro
         private IntPtr _console;
 
         private void ShowConsole() => ShowWindow(_console, SW_SHOW);
-        private void HidConsole() => ShowWindow(_console, SW_HIDE);
+        private void HideConsole() => ShowWindow(_console, SW_HIDE);
 
         #endregion
 
@@ -165,11 +165,14 @@ namespace Neuro
             if (!File.Exists(WEIGTHTS_PATH)) return;
             var w_str = File.ReadAllText(WEIGTHTS_PATH);
             _nn.LoadWeigths(w_str);
+
+            UpdateUI();
         }
 
         private void Button_Reset(object sender, RoutedEventArgs e)
         {
             _nn = new();
+
             UpdateUI();
         }
 
@@ -210,7 +213,8 @@ namespace Neuro
             Console.WriteLine($"learned on {data_length} images in {eras} eras in {sw.Elapsed.ToString("G")}");
             Console.ReadKey();
 
-            HidConsole();
+            UpdateUI();
+            HideConsole();
         }
 
         #endregion
